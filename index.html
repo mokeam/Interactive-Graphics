@@ -1,42 +1,190 @@
 <!DOCTYPE html>
 <html>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="Common/styles.css">
+	<script id="vertex-shader-gouraud" type="x-shader/x-vertex">
+		attribute  vec4 vPosition;
+		attribute  vec4 vNormal; 
+		varying vec4 fColor;
+		uniform vec4 ambientProduct;
+		uniform vec4 diffuseProduct;
+		uniform vec4 specularProduct;
+		uniform vec4 lightPosition; 
+		uniform float shininess;
+		uniform mat4 modelViewMatrix; 
+		uniform mat4 projectionMatrix; 
 
-<script id="vertex-shader" type="x-shader/x-vertex">
+		void main() {
+		    
+		    vec3 pos = -(modelViewMatrix * vPosition).xyz;
+		    vec3 light = lightPosition.xyz;
+		    
+		    vec3 L = normalize(light - pos);
+		    vec3 E = normalize(-pos);
+		    vec3 H = normalize(L + E);
+		    
+		    vec3 N = normalize((modelViewMatrix * vNormal).xyz);
+		    
+		    vec4 ambient = ambientProduct;
+		    float Kd = max(dot(L, N), 0.0);
+		    
+		    vec4 diffuse = Kd * diffuseProduct;
+		    float Ks = pow(max(dot(N, H), 0.0), shininess);
+		    
+		    vec4 specular = Ks * specularProduct;
+		    if (dot(L, N) < 0.0) {
+		        specular = vec4(0.0, 0.0, 0.0, 1.0);
+		    }
+		    
+		    fColor = ambient + diffuse + specular;
+		    fColor.a = 1.0;
+		    
+		    gl_Position =  projectionMatrix * modelViewMatrix * vPosition;
+		}
+	</script>
 
-attribute  vec4 vPosition;
-attribute  vec4 vColor;
+	<script id="fragment-shader-gouraud" type="x-shader/x-fragment">
+		precision mediump float;
+		varying vec4 fColor;
 
-varying vec4 fColor;
+		void main() {
+		    gl_FragColor = fColor;
 
-void main()
-{
-    fColor = vColor;
-    gl_Position = vPosition;
-}
-</script>
+		}
+	</script>
+    
+    <script id="vertex-shader-phong" type="x-shader/x-vertex">
+		attribute vec4 vPosition;
+		attribute vec4 vNormal;
+		varying vec3 N, L, E;
+		uniform mat4 modelViewMatrix;
+		uniform mat4 projectionMatrix;
+		uniform vec4 lightPosition;
 
-<script id="fragment-shader" type="x-shader/x-fragment">
+		void main(){
+		    vec3 pos = -(modelViewMatrix * vPosition).xyz;
+		    vec3 light = lightPosition.xyz;
+		    L = normalize(light - pos);
+		    E = -pos;
+		    N = normalize((modelViewMatrix * vNormal).xyz);
+		    
+		    gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+		}
+	</script>
+    
+	<script id="fragment-shader-phong" type="x-shader/x-fragment">
+		precision mediump float;
+		uniform vec4 ambientProduct;
+		uniform vec4 diffuseProduct;
+		uniform vec4 specularProduct;
+		uniform float shininess;
+		varying vec3 N, L, E;
 
-precision mediump float;
+		void main(){
 
-varying vec4 fColor;
-
-void
-main()
-{
-    gl_FragColor = fColor;
-
-}
-</script>
-
-<script type="text/javascript" src="Common/webgl-utils.js"></script>
-<script type="text/javascript" src="Common/initShaders.js"></script>
-<script type="text/javascript" src="Common/MV.js"></script>
-<script type="text/javascript" src="homework1.js"></script>
-
-<body>
-<canvas id="gl-canvas" width="1024" height="1024">
-Oops ... your browser doesn't support the HTML5 canvas element
-</canvas>
-</body>
+		    vec4 fColor;
+		    
+		    vec3 H = normalize(L + E);
+		    vec4 ambient = ambientProduct;
+		    
+		    float Kd = max(dot(L, N), 0.0);
+		    vec4 diffuse = Kd * diffuseProduct;
+		    
+		    float Ks = pow(max(dot(N, H), 0.0), shininess);
+		    vec4 specular = Ks * specularProduct;
+		    
+		    if (dot(L, N) < 0.0) {
+		        specular = vec4(0.0, 0.0, 0.0, 1.0);
+		    }
+		    
+		    fColor = ambient + diffuse + specular;
+		    fColor.a = 1.0;
+		    
+		    gl_FragColor = fColor;
+		}
+	</script>
+	
+	<body>
+		<div class="container">
+			<div>
+			  <ul class="nav nav-tabs" role="tablist">
+			    <li role="presentation" class="active"><a href="#rotation" aria-controls="rotation" role="tab" data-toggle="tab">Rotation</a></li>
+			    <li role="presentation"><a href="#scaling" aria-controls="scaling" role="tab" data-toggle="tab">Scaling</a></li>
+			    <li role="presentation"><a href="#light" aria-controls="light" role="tab" data-toggle="tab">Light</a></li>
+			    <li role="presentation"><a href="#near-far" aria-controls="near-far" role="tab" data-toggle="tab">Near/Far</a></li>
+			  </ul>
+			  <!-- Tab panes -->
+			  <div class="tab-content">
+			    <div role="tabpanel" class="tab-pane active" id="rotation">
+			    	<div class="btn-group" role="group">
+				    	<button id ="rotateX" class="btn btn-primary"">Rotate X Direction</button>
+						<button id ="rotateY" class="btn btn-success">Rotate Y Direction</button>
+						<button id ="rotateZ" class="btn btn-info">Rotate Z Direction</button>
+					</div>
+					<div class="btn-group" role="group">
+					 	<button id ="ButtonT" class="btn btn-warning">Toggle Rotation</button>
+						<button id ="changeR" class="btn btn-warning">Change Rotation Direction</button>
+					</div>
+			    </div>
+			    <div role="tabpanel" class="tab-pane" id="scaling">
+		    		<div class="range scaling-range">
+						<input type="range" id="scalingSlider" name="range" class="custom-range" min="0" max="2" step="0.1" onchange="scalingRange.value=value">
+						<output id="scalingRange">0</output>
+					</div>
+					<label for="scalingSlider" class="pright">Scaling</label>
+			        <div class="range x-range">
+			        	<input id="translationXSlider" type="range" name="range" min="-1" max="1" step="0.01" value="0" onchange="xRange.value=value"/>
+			        	<output id="xRange">0</output>
+			        </div>
+			        <label for="translationXSlider" class="pright">Translate X</label>
+			        <div class="range y-range">
+			        	<input id="translationYSlider" type="range" min="-1" max="1" step="0.01" value="0" onchange="yRange.value=value"/>
+			        	<output id="yRange">0</output>
+			        </div>
+			        <label for="translationYSlider" class="pright">Translate Y</label>
+			        <div class="range z-range">
+			        	<input id="translationZSlider" type="range" min="-1" max="1" step="0.01" value="0" onchange="zRange.value=value"/>
+			        	<output id="zRange">0</output>
+			        </div>
+			        <label for="translationZSlider" class="pright">Translate Z</label>
+			    </div>
+			    <div role="tabpanel" class="tab-pane" id="light">
+			    	<center>
+			    		<button id ="lightButton" class="btn btn-success">Change lighting</button>
+			    	</center>
+			    </div>
+			    <div role="tabpanel" class="tab-pane" id="near-far">
+			        <div class="range n-range">
+			        	<input id="nearSlider" type="range" min="0.01" max="3" step="0.1" value="0.3" onchange="nRange.value=value"/>
+			        	<output id="nRange">0.3</output>
+			        </div>
+			         <label for="nearSlider" class="pright">Near</label>
+			 		<div class="range f-range">
+			 			<input id="farSlider" type="range" min="3" max="10" step="1" value="3" onchange="fRange.value=value"/>
+			 			<output id="fRange">3</output>
+			 		</div>
+			 		<label for="farSlider" class="pright">Far</label>
+			    </div>
+			  </div>
+			</div>
+		</div>
+	    <div class="canvas-container">
+	    	<canvas id="gl-canvas" width="700" height="600">
+			Oops ... your browser doesn't support the HTML5 canvas element
+			</canvas>
+			<div class="footer row">
+				<b class="col-md-2 col-md-offset-4"><h4>Orthogonal</h4></b>
+				<b class="col-md-2 col-md-offset-4"><h4>Perspective</h4></b>
+				<b class="col-md-2 col-md-offset-4"><h4>Perspective</h4></b>
+				<b class="col-md-2 col-md-offset-4"><h4>Perspective</h4></b>
+			</div>
+	    </div>
+	    
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+		<script type="text/javascript" src="Common/webgl-utils.js"></script>
+		<script type="text/javascript" src="Common/initShaders.js"></script>
+		<script type="text/javascript" src="Common/MV.js"></script>
+		<script type="text/javascript" src="homework1.js"></script>
+	</body>
 </html>
