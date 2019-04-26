@@ -21,6 +21,67 @@ var eye = vec3(0.0, 0.0, 3.0);
 const at = vec3(0.0, 0.0, 0.0); 
 const up = vec3(0.0, 1.0, 0.0); 
 
+var texSize = 256;
+
+var texture1, texture2;
+var texCoordsArray = [];
+
+var image1 = new Uint8Array(4*texSize*texSize);
+
+    for ( var i = 0; i < texSize; i++ ) {
+        for ( var j = 0; j <texSize; j++ ) {
+            var patchx = Math.floor(i/(texSize/numChecks));
+            if(patchx%2) c = 255;
+            else c = 0;
+            image1[4*i*texSize+4*j] = c;
+            image1[4*i*texSize+4*j+1] = c;
+            image1[4*i*texSize+4*j+2] = c;
+            image1[4*i*texSize+4*j+3] = 255;
+        }
+    }
+
+var image2 = new Uint8Array(4*texSize*texSize);
+
+    // Create a checkerboard pattern
+    for ( var i = 0; i < texSize; i++ ) {
+        for ( var j = 0; j <texSize; j++ ) {
+            var patchy = Math.floor(j/(texSize/numChecks));
+            if(patchy%2) c = 255;
+            else c = 0;
+            image2[4*i*texSize+4*j] = c;
+            image2[4*i*texSize+4*j+1] = c;
+            image2[4*i*texSize+4*j+2] = c;
+            image2[4*i*texSize+4*j+3] = 255;
+           }
+    }
+
+var texCoord = [
+    vec2(0, 0),
+    vec2(0, 1),
+    vec2(1, 1),
+    vec2(1, 0)
+];
+
+function configureTexture() {
+    texture1 = gl.createTexture();
+    gl.bindTexture( gl.TEXTURE_2D, texture1 );
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, image1);
+    gl.generateMipmap( gl.TEXTURE_2D );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
+                      gl.NEAREST_MIPMAP_LINEAR );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+    texture2 = gl.createTexture();
+    gl.bindTexture( gl.TEXTURE_2D, texture2 );
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, image2);
+    gl.generateMipmap( gl.TEXTURE_2D );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
+                      gl.NEAREST_MIPMAP_LINEAR );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+}
+
 var phongShader = false;
 var gouraudProgram;
 var phongProgram;
@@ -29,7 +90,7 @@ var ambientProduct,ambientProductLoc;
 var diffuseProduct,diffuseProductLoc;
 var specularProduct,specularProductLoc;
 
-var switch_direction = 1; 
+var change_direction = 1; 
 
 var cameraTransformationMatrix;
 
@@ -41,7 +102,7 @@ var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 ); 
 var materialDiffuse = vec4( 0.0, 1.0, 1.0, 1.0); 
 var materialSpecular = vec4( 0.0, 1.0, 1.0, 1.0 ); 
-var materialShininess = 100.0;
+var materialShininess = 500.0;
 
 var lightPositionLoc;
 var shininessLoc;
@@ -107,21 +168,27 @@ function quad(a, b, c, d) {
     
      pointsArray.push(vertices[a]);
      normalsArray.push(normal); 
+     texCoordsArray.push(texCoord[0]);
 
      pointsArray.push(vertices[b]);
      normalsArray.push(normal); 
+     texCoordsArray.push(texCoord[1]);
 
      pointsArray.push(vertices[c]);
      normalsArray.push(normal); 
+     texCoordsArray.push(texCoord[2]);
 
      pointsArray.push(vertices[a]);
      normalsArray.push(normal); 
+     texCoordsArray.push(texCoord[0]);
 
      pointsArray.push(vertices[c]);
      normalsArray.push(normal); 
+     texCoordsArray.push(texCoord[2]);
 
      pointsArray.push(vertices[d]);
      normalsArray.push(normal); 
+     texCoordsArray.push(texCoord[3]);
 }
 
 function colorCube()
@@ -156,11 +223,8 @@ window.onload = function init() {
     colorCube();
 
     var nBuffer = gl.createBuffer(); 
-    
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer ); 
-
     gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW ); 
-
     
     var vNormal = gl.getAttribLocation( phongProgram, "vNormal" );
     gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
@@ -177,7 +241,6 @@ window.onload = function init() {
     var vBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
     gl.bufferData( gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW );
-
     
     var vPosition = gl.getAttribLocation( phongProgram, "vPosition" );
     gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
@@ -189,6 +252,40 @@ window.onload = function init() {
     
     // gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
     // gl.enableVertexAttribArray( vPosition );
+    var tBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer);
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoordsArray), gl.STATIC_DRAW );
+
+    var vTexCoord = gl.getAttribLocation(phongProgram, "vTexCoord" );
+    gl.vertexAttribPointer( vTexCoord, 2, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vTexCoord );
+
+    configureTexture();
+
+    gl.activeTexture( gl.TEXTURE0 );
+    gl.bindTexture( gl.TEXTURE_2D, texture1 );
+    gl.uniform1i(gl.getUniformLocation(phongProgram, "Tex0"), 0);
+
+    gl.activeTexture( gl.TEXTURE1 );
+    gl.bindTexture( gl.TEXTURE_2D, texture2 );
+    gl.uniform1i(gl.getUniformLocation(phongProgram, "Tex1"), 1);
+
+
+    var t2Buffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, t2Buffer);
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoordsArray), gl.STATIC_DRAW );
+
+    var vTexCoord = gl.getAttribLocation(gouraudProgram, "vTexCoord" );
+    gl.vertexAttribPointer( vTexCoord, 2, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vTexCoord );
+
+    gl.activeTexture( gl.TEXTURE0 );
+    gl.bindTexture( gl.TEXTURE_2D, texture1 );
+    gl.uniform1i(gl.getUniformLocation(gouraudProgram, "Tex0"), 0);
+
+    gl.activeTexture( gl.TEXTURE1 );
+    gl.bindTexture( gl.TEXTURE_2D, texture2 );
+    gl.uniform1i(gl.getUniformLocation(gouraudProgram, "Tex1"), 1);
 
 
     document.getElementById("rotateX").onclick = function(){axis = xAxis;};
@@ -199,7 +296,7 @@ window.onload = function init() {
 
     document.getElementById("ButtonT").onclick = function(){flag = !flag;};
 
-    document.getElementById("changeR").onclick = function(){switch_direction = - switch_direction;}; 
+    document.getElementById("changeR").onclick = function(){change_direction = - change_direction;}; 
 
     document.getElementById("scalingSlider").oninput = function(){
         scaleVector = [event.target.value, event.target.value, event.target.value]; 
@@ -217,11 +314,11 @@ window.onload = function init() {
         translateVector[zAxis] = event.target.value;
     } 
     
-    document.getElementById("nearSlider").oninput = function(){ 
+    document.getElementById("nearSlider").oninput = function(event){ 
         near = event.target.value;
     }
     
-    document.getElementById("farSlider").oninput = function(){ 
+    document.getElementById("farSlider").oninput = function(event){ 
         far = event.target.value;
     }
     
@@ -240,7 +337,7 @@ window.onload = function init() {
 var render = function() {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    if(flag) theta[axis] += 2.0 * switch_direction; 
+    if(flag) theta[axis] += 2.0 * change_direction; 
     
     function renderScene(drawX, drawY, drawWidth, drawHeight,projectionMatrix) {
       gl.enable(gl.SCISSOR_TEST);
@@ -277,7 +374,7 @@ var render = function() {
             shininessLoc = gl.getUniformLocation(gouraudProgram, "shininess")
         }
 
-        cameraTransformationMatrix = lookAt(eye, at , up);
+        cameraTransformationMatrix = lookAt(eye, at , up); // Returns a view matrix
         
         cameraTransformationMatrix = mult(cameraTransformationMatrix,translate(translateVector));
         
@@ -306,14 +403,14 @@ var render = function() {
 
     // draw orthogonal projection
     { projectionMatrix = ortho(left, right, bottom, ytop, near, far);
-      gl.clearColor(0.1, 0.1, 0.1, 1.0);
+      // gl.clearColor(1.0, 0.1, 0.1, 1.0);
       renderScene(0, 0, width / 2, height,projectionMatrix);
     }
     
     // draw perspective projection
     {
       projectionMatrix = perspective(fovy, aspect, near, far);
-      gl.clearColor(0.2, 0.2, 0.2, 1.0 );
+      // gl.clearColor(0.2, 0.2, 0.2, 1.0 );
       renderScene(width / 2, 0, width / 2, height,projectionMatrix);
     }
 

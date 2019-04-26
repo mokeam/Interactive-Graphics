@@ -6,6 +6,8 @@
 		attribute  vec4 vPosition;
 		attribute  vec4 vNormal; 
 		varying vec4 fColor;
+		attribute  vec2 vTexCoord;
+		varying vec2 fTexCoord;
 		uniform vec4 ambientProduct;
 		uniform vec4 diffuseProduct;
 		uniform vec4 specularProduct;
@@ -19,26 +21,26 @@
 		    vec3 pos = -(modelViewMatrix * vPosition).xyz;
 		    vec3 light = lightPosition.xyz;
 		    
-		    vec3 L = normalize(light - pos);
+		    vec3 light_direction = normalize(light - pos);
 		    vec3 E = normalize(-pos);
-		    vec3 H = normalize(L + E);
+		    vec3 halfVector = normalize(light_direction + E);
 		    
 		    vec3 N = normalize((modelViewMatrix * vNormal).xyz);
 		    
 		    vec4 ambient = ambientProduct;
-		    float Kd = max(dot(L, N), 0.0);
+		    float Kd = max(dot(light_direction, N), 0.0);
 		    
 		    vec4 diffuse = Kd * diffuseProduct;
-		    float Ks = pow(max(dot(N, H), 0.0), shininess);
+		    float Ks = pow(max(dot(N, halfVector), 0.0), shininess);
 		    
 		    vec4 specular = Ks * specularProduct;
-		    if (dot(L, N) < 0.0) {
+		    if (dot(light_direction, N) < 0.0) {
 		        specular = vec4(0.0, 0.0, 0.0, 1.0);
 		    }
 		    
 		    fColor = ambient + diffuse + specular;
 		    fColor.a = 1.0;
-		    
+		    fTexCoord = vTexCoord;
 		    gl_Position =  projectionMatrix * modelViewMatrix * vPosition;
 		}
 	</script>
@@ -46,9 +48,14 @@
 	<script id="fragment-shader-gouraud" type="x-shader/x-fragment">
 		precision mediump float;
 		varying vec4 fColor;
+		varying  vec2 fTexCoord;
+
+		uniform sampler2D Tex0;
+		uniform sampler2D Tex1;
 
 		void main() {
-		    gl_FragColor = fColor;
+		    //gl_FragColor = fColor;
+		    gl_FragColor = fColor*(texture2D(Tex0, fTexCoord)*texture2D(Tex1, fTexCoord));
 
 		}
 	</script>
@@ -56,18 +63,20 @@
     <script id="vertex-shader-phong" type="x-shader/x-vertex">
 		attribute vec4 vPosition;
 		attribute vec4 vNormal;
-		varying vec3 N, L, E;
+		varying vec3 N, light_direction, E;
 		uniform mat4 modelViewMatrix;
 		uniform mat4 projectionMatrix;
 		uniform vec4 lightPosition;
+		attribute vec2 vTexCoord;
+		varying vec2 fTexCoord;
 
 		void main(){
 		    vec3 pos = -(modelViewMatrix * vPosition).xyz;
 		    vec3 light = lightPosition.xyz;
-		    L = normalize(light - pos);
+		    light_direction = normalize(light - pos);
 		    E = -pos;
 		    N = normalize((modelViewMatrix * vNormal).xyz);
-		    
+		    fTexCoord = vTexCoord;
 		    gl_Position = projectionMatrix * modelViewMatrix * vPosition;
 		}
 	</script>
@@ -78,29 +87,35 @@
 		uniform vec4 diffuseProduct;
 		uniform vec4 specularProduct;
 		uniform float shininess;
-		varying vec3 N, L, E;
+		varying vec3 N, light_direction, E;
+		varying  vec2 fTexCoord;
+		uniform sampler2D Tex0;
+		uniform sampler2D Tex1;
 
 		void main(){
 
 		    vec4 fColor;
 		    
-		    vec3 H = normalize(L + E);
+		    vec3 halfVector = normalize(light_direction + E);
 		    vec4 ambient = ambientProduct;
 		    
-		    float Kd = max(dot(L, N), 0.0);
+		    float Kd = max(dot(light_direction, N), 0.0);
 		    vec4 diffuse = Kd * diffuseProduct;
 		    
-		    float Ks = pow(max(dot(N, H), 0.0), shininess);
+		    float Ks = pow(max(dot(N, halfVector), 0.0), shininess);
 		    vec4 specular = Ks * specularProduct;
 		    
-		    if (dot(L, N) < 0.0) {
+		    if (dot(light_direction, N) < 0.0) {
 		        specular = vec4(0.0, 0.0, 0.0, 1.0);
 		    }
 		    
 		    fColor = ambient + diffuse + specular;
 		    fColor.a = 1.0;
 		    
-		    gl_FragColor = fColor;
+		    //gl_FragColor = fColor;
+		    gl_FragColor = fColor*(texture2D(Tex0, fTexCoord)*texture2D(Tex1, fTexCoord));
+
+		    
 		}
 	</script>
 	
