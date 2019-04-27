@@ -14,6 +14,11 @@ var c;
 
 var flag = true;
 
+var radius = 4.0;
+var theta  = 0.0;
+var phi    = 0.0;
+var dr = 5.0 * Math.PI/180.0;
+
 var modelViewMatrix, projectionMatrix; 
 var modelViewMatrixLoc, projectionMatrixLoc;
 
@@ -82,7 +87,7 @@ function configureTexture() {
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 }
 
-var phongShader = false;
+var phongShader = true;
 var gouraudProgram;
 var phongProgram;
 
@@ -129,8 +134,6 @@ var far = 5.0;
 
 var  fovy = 45.0;  
 var  aspect = 1.0; 
-
-var thetaLoc;
 
 var pointsArray = [];
 var normalsArray = []; 
@@ -287,7 +290,6 @@ window.onload = function init() {
     gl.bindTexture( gl.TEXTURE_2D, texture2 );
     gl.uniform1i(gl.getUniformLocation(gouraudProgram, "Tex1"), 1);
 
-
     document.getElementById("rotateX").onclick = function(){axis = xAxis;};
 
     document.getElementById("rotateY").onclick = function(){axis = yAxis;};
@@ -321,10 +323,25 @@ window.onload = function init() {
     document.getElementById("farSlider").oninput = function(event){ 
         far = event.target.value;
     }
+    document.getElementById("fovySlider").oninput = function(event){ 
+        fovy = event.target.value;
+    }
+    document.getElementById("aspectSlider").oninput = function(event){ 
+        aspect = event.target.value;
+    }
     
-    document.getElementById("lightButton").onclick = function(){ phongShader = !phongShader };
-    
-    
+    document.getElementById("lightButton").onclick = function(event){
+     
+     if (phongShader){
+        document.getElementById("currentShading").innerHTML = "(current: Phong Shading)";
+        phongShader = false
+     }
+     else {
+        document.getElementById("currentShading").innerHTML = "(current: Gouraud Shading)";
+        phongShader = true
+     }
+
+    };
     
     ambientProduct = mult(lightAmbient, materialAmbient);
     diffuseProduct = mult(lightDiffuse, materialDiffuse);
@@ -374,12 +391,10 @@ var render = function() {
             shininessLoc = gl.getUniformLocation(gouraudProgram, "shininess")
         }
 
+       
         cameraTransformationMatrix = lookAt(eye, at , up); // Returns a view matrix
-        
         cameraTransformationMatrix = mult(cameraTransformationMatrix,translate(translateVector));
-        
         cameraTransformationMatrix = mult(cameraTransformationMatrix,scalem(scaleVector)); 
-        
         cameraTransformationMatrix = mult(cameraTransformationMatrix,rotateZ(-theta[zAxis])); 
         cameraTransformationMatrix = mult(cameraTransformationMatrix,rotateY(-theta[yAxis])); 
         cameraTransformationMatrix = mult(cameraTransformationMatrix,rotateX(-theta[xAxis])); 

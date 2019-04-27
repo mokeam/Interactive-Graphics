@@ -162,10 +162,22 @@
 			        	<output id="zRange">0</output>
 			        </div>
 			        <label for="translationZSlider" class="pright">Translate Z</label>
+
+			        <div class="range fovy-range">
+			        	<input id="fovySlider" type="range" min="10" max="45" step="5" value="0" onchange="fRange.value=value"/>
+			        	<output id="fRange">0</output>
+			        </div>
+			        <label for="fovySlider" class="pright">Fovy</label>
+			        <div class="range y-range">
+			        	<input id="aspectSlider" type="range" min="-1" max="1" step="0.01" value="0" onchange="aRange.value=value"/>
+			        	<output id="aRange">0</output>
+			        </div>
+			        <label for="aspectSlider" class="pright">Aspect</label>
 			    </div>
 			    <div role="tabpanel" class="tab-pane" id="light">
 			    	<center>
 			    		<button id ="lightButton" class="btn btn-success">Change lighting</button>
+			    		<label id="currentShading">(current: Gouraud Shading)</label>
 			    	</center>
 			    </div>
 			    <div role="tabpanel" class="tab-pane" id="near-far">
@@ -179,6 +191,24 @@
 			 			<output id="fRange">3</output>
 			 		</div>
 			 		<label for="farSlider" class="pright">Far</label>
+			 		
+			 		<!-- <div class="range y-range">
+			        	<input id="radiusSlider" type="range" min="0.05" max="10" step="0.1" value="0" onchange="rRange.value=value"/>
+			        	<output id="rRange">0</output>
+			        </div>
+			        <label for="radiusSlider" class="pright">Radius</label>
+
+			        <div class="range n-range">
+			        	<input id="thetaSlider" type="range" min="-90" max="90" step="5" value="0" onchange="tRange.value=value"/>
+			        	<output id="tRange">0</output>
+			        </div>
+			        <label for="thetaSlider" class="pright">Theta</label>
+
+			        <div class="range fovy-range">
+			        	<input id="phiSlider" type="range" min="-90" max="90" step="5" value="0" onchange="pRange.value=value"/>
+			        	<output id="pRange">0</output>
+			        </div>
+			        <label for="phiSlider" class="pright">Phi</label> -->
 			    </div>
 			  </div>
 			</div>
