@@ -5,15 +5,22 @@ canvas{
 .canvas-container
 {
     position: fixed;
-    left: 550px;
+    left: 470px;
     right: 0px;
-    top: 90px;
+    top: 50px;
     bottom: 100px;
     z-index: 1;
+    background: transparent;
 }
-.footer{
-	top:522px;
-	position: absolute;
+.pers{
+    position: absolute;
+    top: 110%;
+    left: 80%;
+}
+.orth{
+   position: absolute;
+   top: 110%;
+   left: 20%;
 }
 .container{
 	margin-top: 40px;
